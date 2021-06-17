@@ -81,6 +81,9 @@ RUN buildDeps='curl gcc make autoconf libc-dev zlib1g-dev pkg-config' \
     && sed -i -e "s/pm.max_requests = 500/pm.max_requests = 200/g" ${fpm_conf} \
     && sed -i -e "s/www-data/nginx/g" ${fpm_conf} \
     && sed -i -e "s/^;clear_env = no$/clear_env = no/" ${fpm_conf} \
+    && echo "env[http_proxy] = http://10.201.245.135:8080" >> ${fpm_conf} \
+    && echo "env[https_proxy] = https://10.201.245.135:8080" >> ${fpm_conf} \
+    && echo "env[no_proxy] = localhost,127.0.0.1,172.17.0.1" >> ${fpm_conf} \
     && echo "extension=redis.so" > /etc/php/7.4/mods-available/redis.ini \
     && echo "extension=memcached.so" > /etc/php/7.4/mods-available/memcached.ini \
     && ln -sf /etc/php/7.4/mods-available/redis.ini /etc/php/7.4/fpm/conf.d/20-redis.ini \
@@ -100,6 +103,9 @@ RUN buildDeps='curl gcc make autoconf libc-dev zlib1g-dev pkg-config' \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/*
 
+RUN echo '#!/bin/bash\n/usr/bin/php /usr/share/nginx/html/artisan "$@"' > /usr/bin/art
+RUN chmod +x /usr/bin/art
+
 # Supervisor config
 COPY ./supervisord.conf /etc/supervisord.conf
 
@@ -107,7 +113,9 @@ COPY ./supervisord.conf /etc/supervisord.conf
 COPY ./default.conf /etc/nginx/conf.d/default.conf
 
 # Override default nginx welcome page
-COPY html /usr/share/nginx/html
+COPY api-tuoguan /usr/share/nginx/html
+
+
 
 # Copy Scripts
 COPY ./start.sh /start.sh
